@@ -1,0 +1,109 @@
+<!--
+  RAD GATO — a Spanish-learning action-sports game
+  Fusion of Trials (momentum/physics) + Duolingo (learn-by-playing).
+  Phase 1: Skateboard vertical slice (3 levels).
+-->
+<meta charset="utf-8" />
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+/>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#ff2fb9" />
+<title>Rad Gato</title>
+<link rel="stylesheet" href="css/style.css" />
+
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <!-- HUD (drawn over the canvas via DOM for crisp text) -->
+  <div id="hud" class="hidden">
+    <div class="hud-row">
+      <button class="hud-pill pause" id="hud-pause" title="Pause (P)">⏸</button>
+      <button class="hud-pill exit" id="hud-exit" title="Exit to menu">SALIDA</button>
+      <div class="hud-pill" id="hud-level">NIVEL 1</div>
+      <div class="hud-pill lives" id="hud-lives">🐾 9</div>
+      <div class="hud-pill" id="hud-score">0</div>
+      <div class="hud-pill combo" id="hud-combo">x1</div>
+      <button class="hud-pill narrate" id="hud-narrate" title="Word voice: on (N)">🗣️</button>
+      <button class="hud-pill mute" id="hud-mute" title="Sound off (M)">🔊</button>
+    </div>
+    <div id="hud-progress"><div id="hud-progress-fill"></div></div>
+    <!-- Sentence levels: the Spanish sentence assembling one word per ramp -->
+    <div id="sentence-bar" class="hidden">
+      <div id="sentence-words"></div>
+      <div id="sentence-en"></div>
+    </div>
+  </div>
+
+  <!-- Track title, briefly, when the soundtrack changes song -->
+  <div id="now-playing" class="hidden"></div>
+
+  <!-- THPS-style trick / bail callout -->
+  <div id="trick-popup" class="hidden"></div>
+
+  <!-- ON FIRE streak banner -->
+  <div id="fire-banner" class="hidden">🔥 EN FUEGO 🔥</div>
+
+  <!-- English prompt shown during the slow-mo trick window -->
+  <div id="prompt" class="hidden">
+    <div class="prompt-label">SAY IT IN SPANISH</div>
+    <div class="prompt-word" id="prompt-word">CAT</div>
+  </div>
+
+  <!-- Overlay screens: title / level-complete / etc. -->
+  <div id="overlay">
+    <div class="overlay-card">
+      <img id="hero" src="assets/cat/mascot_game.png" alt="Rad Gato mascot" />
+      <h1 class="logo">RAD<span>GATO</span></h1>
+      <p class="tagline" id="overlay-tag">Land tricks. Learn Spanish.</p>
+      <div id="overlay-body"></div>
+      <p class="hint" id="overlay-hint"></p>
+      <button id="overlay-btn" class="btn">START</button>
+    </div>
+  </div>
+
+  <!-- The full sentence, flashed up the moment you complete it -->
+  <div id="sentence-flash" class="hidden">
+    <div id="sentence-flash-es"></div>
+    <div id="sentence-flash-en"></div>
+  </div>
+
+  <!-- Pause -->
+  <div id="pause-screen" class="hidden">
+    <div class="pause-card">
+      <div class="pause-title">PAUSA</div>
+      <button id="resume-btn" class="btn">SEGUIR · resume</button>
+      <button id="pause-exit-btn" class="btn btn-secondary">SALIDA · exit</button>
+      <p class="hint">Pulsa SEGUIR para continuar · tap SEGUIR to keep riding</p>
+    </div>
+  </div>
+
+  <!-- "New wheels!" reward shown after clearing a sport's last level.
+       #celebrate is the confetti / fireworks layer that keeps running until
+       you hit ¡VAMOS!. -->
+  <div id="unlock" class="hidden">
+    <canvas id="celebrate"></canvas>
+    <div class="unlock-card">
+      <div class="unlock-kicker">NUEVO EQUIPO</div>
+      <img id="unlock-art" alt="" />
+      <div id="unlock-name">BMX</div>
+      <div id="unlock-es"></div>
+      <div id="unlock-en"></div>
+      <p id="unlock-blurb"></p>
+      <button id="unlock-btn" class="btn">¡VAMOS!</button>
+    </div>
+  </div>
+
+  <!-- Touch steering hint that fades on first play -->
+  <div id="touch-hint" class="hidden">
+    <span>◀ DRAG TO STEER · HOLD TO BOOST ▶</span>
+  </div>
+
+  <!-- Gritty film-frame border (Trials-style) -->
+  <div id="frame"></div>
+
+</div>
+
+<script type="module" src="js/main.js"></script>

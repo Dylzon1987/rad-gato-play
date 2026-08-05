@@ -1,0 +1,1054 @@
+/* ===========================================================================
+   RAD GATO — styles
+   Retro-80s "radical" neon aesthetic, pulled from the reference painting:
+   hot pink, cyan, neon green, sunset orange/yellow, purple. Bold outlines.
+   =========================================================================== */
+
+:root {
+  --pink: #ff2fb9;
+  --magenta: #d6178f;
+  --cyan: #21e6ff;
+  --green: #b6ff2b;
+  --orange: #ff7a1a;
+  --yellow: #ffe11a;
+  --purple: #a12bff;
+  --blue: #2b6bff;
+  --ink: #17021a;
+  --white: #fff6fb;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;   /* no rubber-band drag on iOS */
+  background: #0c0703;
+  color: var(--white);
+  font-family: "Arial Black", "Arial", system-ui, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.hidden { display: none !important; }
+
+/* ------------------------------------------------------------------ HUD --- */
+#hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  /* Clears BOTH the iOS status bar (safe-area) and the film-frame border. The
+     HUD also sits ABOVE #frame (z-index below) so the frame's black top border
+     can never clip the pills again — that was why the icons looked cut off. */
+  padding: max(34px, calc(env(safe-area-inset-top) + 16px)) 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 16;
+}
+.hud-row { display: flex; gap: 7px; align-items: center; }
+.hud-pill {
+  white-space: nowrap;      /* "NIVEL 10" must never wrap to two lines */
+  flex: 0 0 auto;
+  font-size: clamp(13px, 2.6vw, 22px);
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  padding: 6px 16px;
+  border-radius: 6px 14px 6px 14px;
+  background: rgba(12, 7, 3, 0.72);
+  border: 2px solid rgba(255, 180, 90, 0.4);
+  color: #ffe4b0;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+#hud-score {
+  margin-left: auto;
+  color: var(--yellow);
+  border-color: var(--yellow);
+}
+.hud-pill.combo {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  transition: transform 0.12s ease;
+}
+.hud-pill.combo.pop { transform: scale(1.35) rotate(-4deg); }
+
+/* The interactive HUD buttons opt back into pointer events (the HUD itself is
+   pointer-events:none). */
+.hud-pill.mute, .hud-pill.narrate {
+  font-family: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  padding: 6px 12px;
+  line-height: 1;
+}
+.hud-pill.mute { color: var(--green); border-color: var(--green); }
+.hud-pill.narrate { color: var(--purple); border-color: var(--purple); }
+.hud-pill.mute.off, .hud-pill.narrate.off {
+  color: rgba(255, 255, 255, 0.42);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+/* The lives pill: paw + count, kept tight so nine never wraps or overflows. */
+.hud-pill.lives { color: #ffd0a0; border-color: rgba(255, 150, 90, 0.6); }
+
+/* ------------------------------------------------------- Now playing --- */
+#now-playing {
+  position: absolute;
+  left: 24px;
+  bottom: max(70px, calc(env(safe-area-inset-bottom) + 70px));
+  z-index: 6;
+  pointer-events: none;
+  font-size: clamp(10px, 2vw, 13px);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 14px rgba(33, 230, 255, 0.6);
+}
+#now-playing.show { animation: np 4.5s ease forwards; }
+@keyframes np {
+  0%   { opacity: 0; transform: translateX(-12px); }
+  10%  { opacity: 1; transform: translateX(0); }
+  78%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+#hud-progress {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(23, 2, 26, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+}
+#hud-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff8a1a, #ffd24d);
+  box-shadow: 0 0 12px #ff8a1a;
+  transition: width 0.25s ease;
+}
+
+/* ------------------------------------------------- Sentence-level HUD --- */
+/* The Spanish sentence assembling one word per ramp. Locked-in words glow;
+   the word you're currently jumping for pulses; the rest stay as dots. */
+/* Anchored to the BOTTOM like subtitles: the top band is already busy with the
+   HUD, the English prompt and the world-projected word bubbles. */
+#sentence-bar {
+  position: fixed;
+  left: 50%;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(94%, 1100px);
+  text-align: center;
+  pointer-events: none;
+  z-index: 6;
+}
+#sentence-words {
+  font-size: clamp(24px, 5.1vw, 45px);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  text-shadow: 0 2px 0 var(--ink), 0 0 18px rgba(0, 0, 0, 0.8);
+}
+#sentence-words .sw { margin: 0 0.14em; }
+#sentence-words .sw.done {
+  color: var(--green);
+  text-shadow: 0 2px 0 var(--ink), 0 0 16px var(--green);
+}
+#sentence-words .sw.now {
+  color: var(--yellow);
+  text-shadow: 0 2px 0 var(--ink), 0 0 20px var(--yellow);
+  animation: swpulse 0.9s ease-in-out infinite;
+}
+#sentence-words .sw.todo { color: rgba(255, 255, 255, 0.35); }
+@keyframes swpulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+#sentence-en {
+  margin-top: 4px;
+  font-weight: 800;
+  font-size: clamp(15px, 2.6vw, 21px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+/* The sentences you completed, on the level-complete card. A sentence level
+   finishes four of them, so this list has to stay compact and scrollable. */
+#overlay-body .sentence-win {
+  font-size: clamp(15px, 2.9vw, 21px);
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--green);
+  text-shadow: 0 2px 0 var(--ink), 0 0 16px var(--green);
+  margin: 7px 0 0;
+}
+#overlay-body .sentence-win-en {
+  font-style: italic;
+  font-size: clamp(10px, 1.9vw, 12px);
+  line-height: 1.25;
+  color: var(--cyan);
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------- Prompt --- */
+/* Pinned directly under the HUD as a compact bar rather than floating at a
+   percentage depth. The word bubbles are world-projected, so a free-floating
+   prompt could and did drift on top of them on shorter windows. Now it owns a
+   fixed strip at the top and game.js keeps the bubbles below it. */
+#prompt {
+  position: absolute;
+  /* BOTTOM of the screen (Dylan: "it's hard to look up and then read the
+     middle") — your eyes stay on the cat/bubbles band and the prompt sits in
+     thumb territory, above the sentence/rush bar. */
+  top: auto;
+  bottom: calc(max(22px, env(safe-area-inset-bottom)) + 12vh);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 24px;
+  border-radius: 8px 20px 8px 20px;
+  /* This is THE most important thing on screen — it tells you what to pick.
+     Near-solid plate + bright border so it can never blend into the backdrop. */
+  background: rgba(8, 4, 2, 0.92);
+  border: 3px solid var(--yellow);
+  box-shadow: 0 0 26px rgba(255, 225, 26, 0.55), 0 6px 20px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  text-align: center;
+  white-space: nowrap;
+  z-index: 6;
+  pointer-events: none;
+  animation: prompt-in 0.25s ease;
+}
+@keyframes prompt-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(0.9); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+.prompt-label {
+  font-size: clamp(11px, 2vw, 15px);
+  letter-spacing: 2px;
+  color: var(--yellow);
+  text-shadow: 0 0 10px #ff8a1a;
+}
+.prompt-word {
+  /* Capped against viewport HEIGHT too — a wide, short window used to blow this
+     up to 54px and push the bar down into the answer bubbles. */
+  font-size: clamp(34px, min(9.5vw, 8vh), 64px);
+  /* The curriculum has real prompts now ("TO PRESCRIBE", "THE WITHDRAWAL") —
+     anything long must shrink instead of clipping at the card's edge. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  line-height: 1.02;
+  font-weight: 900;
+  color: #fffdf2;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  -webkit-text-stroke: 3px var(--ink);
+  text-shadow: 0 4px 0 #a0430a, 0 0 26px rgba(255, 225, 26, 0.95);
+}
+
+/* --------------------------------------------------------- Trick popup --- */
+#trick-popup {
+  position: absolute;
+  /* BELOW the answer row. The popup lingers ~1.15s, which can overlap the next
+     question, so at 30% it sat directly on top of the words. */
+  top: 64%;
+  left: 50%;
+  z-index: 7;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  white-space: nowrap;
+}
+#trick-popup .tname {
+  display: block;
+  font-size: clamp(28px, 9vw, 56px);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 1px;
+  color: var(--yellow);
+  -webkit-text-stroke: 2px var(--ink);
+  text-shadow: 0 3px 0 var(--magenta), 0 0 22px rgba(255, 225, 26, 0.85);
+}
+#trick-popup .tpts {
+  display: block;
+  font-size: clamp(20px, 6vw, 34px);
+  font-weight: 900;
+  color: var(--green);
+  -webkit-text-stroke: 1.5px var(--ink);
+  text-shadow: 0 0 16px rgba(182, 255, 43, 0.9);
+}
+#trick-popup.bad .tname {
+  color: var(--pink);
+  text-shadow: 0 3px 0 var(--ink), 0 0 22px rgba(255, 47, 185, 0.9);
+}
+#trick-popup.pop { animation: trick-pop 1.15s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
+@keyframes trick-pop {
+  0%   { opacity: 0; transform: translate(-50%, -30%) scale(0.5) rotate(-8deg); }
+  14%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(-4deg); }
+  30%  { transform: translate(-50%, -50%) scale(1) rotate(-3deg); }
+  75%  { opacity: 1; transform: translate(-50%, -60%) scale(1) rotate(-3deg); }
+  100% { opacity: 0; transform: translate(-50%, -90%) scale(0.95) rotate(-3deg); }
+}
+
+/* ------------------------------------------------------------ On fire --- */
+#fire-banner {
+  position: absolute;
+  top: 21%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: clamp(24px, 7vw, 52px);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 1px;
+  color: #ffe11a;
+  -webkit-text-stroke: 2px var(--ink);
+  text-shadow: 0 0 18px #ff7a1a, 0 0 36px #ff2f00, 0 3px 0 #b3200a;
+}
+#fire-banner.pop { animation: fire-pop 1.3s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
+@keyframes fire-pop {
+  0%   { opacity: 0; transform: translateX(-50%) scale(0.4) rotate(-6deg); }
+  15%  { opacity: 1; transform: translateX(-50%) scale(1.2) rotate(3deg); }
+  30%  { transform: translateX(-50%) scale(1) rotate(-2deg); }
+  75%  { opacity: 1; transform: translateX(-50%) scale(1) rotate(-2deg); }
+  100% { opacity: 0; transform: translateX(-50%) scale(1.05) translateY(-24px); }
+}
+
+/* -------------------------------------------------------------- Overlay --- */
+#overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Top padding must clear the notch / Dynamic Island AND the 36px that #hero
+     pulls itself above the card edge — on a real iPhone the mascot's head was
+     being sliced off by the island. Only visible on device, not in a browser. */
+  padding: max(40px, calc(env(safe-area-inset-top) + 44px)) 24px
+           max(24px, calc(env(safe-area-inset-bottom) + 12px));
+  background: radial-gradient(120% 120% at 50% 25%, rgba(255,150,40,0.28), rgba(12,7,3,0.9));
+  backdrop-filter: blur(2px);
+}
+#overlay.hidden { display: none; }
+.overlay-card {
+  width: min(440px, 92vw);
+  max-height: 92vh;
+  overflow-y: auto;          /* the 4-sentence payoff card can outgrow the screen */
+  overscroll-behavior: contain;
+  /* the sticky START button sits flush against the padding edge */
+  padding-bottom: 0;
+  text-align: center;
+  background: rgba(18, 10, 4, 0.78);
+  border: 3px solid #ffb84d;
+  border-radius: 22px;
+  padding: 26px 22px 22px;
+  box-shadow: 0 0 40px rgba(255, 138, 26, 0.45), inset 0 0 30px rgba(255, 180, 90, 0.1);
+}
+#hero {
+  display: block;
+  /* No negative margin: the card scrolls (overflow-y:auto), so anything above
+     its edge gets CLIPPED — that was the cat's missing head on the title. */
+  margin: 4px auto 0;
+  max-height: 16vh;
+  max-width: 34%;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+#hero.hidden { display: none; }
+
+.logo {
+  font-size: clamp(28px, 7.5vw, 44px);
+  line-height: 0.88;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: var(--yellow);
+  -webkit-text-stroke: 3px var(--ink);
+  text-shadow: 0 5px 0 var(--magenta), 0 0 26px rgba(255, 225, 26, 0.6);
+}
+.logo span { color: var(--cyan); display: block; }
+.tagline {
+  margin-top: 6px;
+  font-size: clamp(12px, 2.6vw, 15px);
+  font-weight: 700;
+  color: var(--white);
+  opacity: 0.9;
+  letter-spacing: 0.5px;
+}
+#overlay-body {
+  margin: 8px 0 4px;
+  font-size: clamp(13px, 3.6vw, 16px);
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--white);
+}
+#overlay-body .big {
+  font-size: clamp(30px, 9vw, 46px);
+  color: var(--green);
+  font-weight: 900;
+  text-shadow: 0 0 18px rgba(182,255,43,0.7);
+}
+#overlay-body .stat { color: var(--cyan); }
+/* ------------------------------------------------------- Level select --- */
+.lvl-select { margin-top: 10px; }
+.lvl-select-h {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #ffcf7a;
+  margin-bottom: 8px;
+}
+/* One compact row per level so all 7 plus the START button stay above the
+   fold — a level picker you have to scroll to reach defeats the point. */
+.lvl-grid { display: flex; flex-direction: column; gap: 4px; }
+.lvl-btn {
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 10px;
+  border-radius: 4px 10px 4px 10px;
+  background: rgba(12, 7, 3, 0.6);
+  border: 2px solid rgba(255, 180, 90, 0.4);
+  color: var(--white);
+  text-align: left;
+  transition: transform 0.08s ease, border-color 0.08s ease;
+}
+.lvl-btn:hover  { border-color: var(--cyan); transform: translateX(3px); }
+.lvl-btn:active { transform: translateX(0); }
+.lvl-btn .lvl-n {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--yellow);
+  min-width: 12px;
+}
+.lvl-btn .lvl-name {
+  font-size: 11px;
+  font-weight: 900;
+  flex: 1;
+}
+.lvl-btn .lvl-sport {
+  font-size: 8px;
+  letter-spacing: 1.2px;
+  color: var(--cyan);
+}
+
+/* ------------------------------------------------------- Sport select --- */
+/* The landing-page ride picker: unlocked sports are playable cards, the next
+   two show LOCKED (you can see what's coming), the rest are ??? mysteries. */
+.sport-select { margin-top: 10px; }
+.sport-select-h {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: #ffcf7a;
+  margin-bottom: 8px;
+}
+.sport-grid { display: flex; flex-direction: column; gap: 6px; }
+.sport-btn {
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 7px 12px;
+  border-radius: 6px 14px 6px 14px;
+  background: rgba(12, 7, 3, 0.6);
+  border: 2px solid rgba(255, 180, 90, 0.4);
+  color: var(--white);
+  text-align: left;
+  min-height: 52px;
+}
+button.sport-btn { cursor: pointer; transition: transform 0.08s ease, border-color 0.08s ease, box-shadow 0.08s ease; }
+button.sport-btn:hover  { border-color: var(--cyan); transform: translateX(3px); box-shadow: 0 0 18px rgba(33,230,255,0.25); }
+button.sport-btn:active { transform: translateX(0); }
+.sport-art {
+  width: 46px; height: 46px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.5));
+}
+.sport-txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.sport-name {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: var(--yellow);
+}
+.sport-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sport-go {
+  flex: 0 0 auto;
+  font-size: 18px;
+  color: var(--green);
+  text-shadow: 0 0 10px rgba(182,255,43,0.7);
+}
+/* Locked-but-visible: dimmed art, a padlock, and no interactivity. */
+.sport-btn.locked { opacity: 0.72; border-style: dashed; }
+.sport-btn.locked .sport-art { filter: grayscale(0.7) brightness(0.7); opacity: 0.85; }
+.sport-btn.locked .sport-name { color: rgba(255, 255, 255, 0.7); }
+.sport-lock { flex: 0 0 auto; font-size: 18px; }
+/* Mystery: a big "?" stands in for the ride entirely. */
+.sport-btn.mystery { border-style: dashed; border-color: rgba(255,255,255,0.2); opacity: 0.6; }
+.sport-q {
+  flex: 0 0 auto;
+  width: 46px;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 900;
+  color: var(--cyan);
+  text-shadow: 0 0 14px rgba(33,230,255,0.6);
+}
+.sport-btn.mystery .sport-name { color: rgba(255,255,255,0.5); letter-spacing: 3px; }
+
+.btn {
+  margin-top: 14px;
+  font-family: inherit;
+  font-size: clamp(17px, 4vw, 22px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--green), var(--cyan));
+  border: 3px solid var(--white);
+  border-radius: 14px;
+  padding: 11px 34px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 var(--magenta), 0 10px 24px rgba(0,0,0,0.4);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--magenta), 0 6px 16px rgba(0,0,0,0.4);
+}
+.hint {
+  margin-top: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--cyan);
+  opacity: 0.75;
+}
+
+/* --------------------------------------------------- Unlock / new gear --- */
+#unlock {
+  position: fixed;
+  inset: 0;
+  z-index: 30;                 /* above the level-complete card */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(120% 120% at 50% 40%, rgba(255,200,40,0.3), rgba(8,4,14,0.94));
+}
+#unlock.hidden { display: none !important; }
+.unlock-card {
+  width: min(420px, 92vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  text-align: center;
+  padding: 22px 22px 20px;
+  border-radius: 22px;
+  background: rgba(18, 10, 4, 0.9);
+  border: 3px solid var(--yellow);
+  box-shadow: 0 0 60px rgba(255, 225, 26, 0.5);
+}
+#unlock.pop .unlock-card { animation: unlock-in 0.5s cubic-bezier(0.2, 1.1, 0.3, 1); }
+@keyframes unlock-in {
+  0%   { opacity: 0; transform: scale(0.6) rotate(-6deg); }
+  70%  { transform: scale(1.06) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+.unlock-kicker {
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--cyan);
+  margin-bottom: 6px;
+}
+#unlock-art {
+  display: block;
+  margin: 0 auto 4px;
+  max-height: 26vh;
+  max-width: 62%;
+  filter: drop-shadow(0 0 22px rgba(255, 225, 26, 0.6));
+  animation: unlock-float 2.4s ease-in-out infinite;
+}
+@keyframes unlock-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-9px) rotate(2deg); }
+}
+#unlock-name {
+  font-size: clamp(26px, 8vw, 44px);
+  font-weight: 900;
+  color: var(--yellow);
+  -webkit-text-stroke: 2px var(--ink);
+  text-shadow: 0 4px 0 var(--magenta), 0 0 26px rgba(255, 225, 26, 0.7);
+}
+#unlock-blurb {
+  margin: 8px 0 0;
+  font-size: clamp(12px, 2.6vw, 15px);
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--white);
+  opacity: 0.9;
+}
+
+/* ----------------------------------------------------- ESTUDIA glossary --- */
+/* The pre-level study card: the lesson's words, Spanish left / English right,
+   tap a row to hear it. Scrolls if a sentence level runs long. */
+.gloss {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px auto;
+  max-width: 480px;
+  max-height: 44vh;
+  overflow-y: auto;
+  text-align: left;
+}
+.gloss-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  padding: 8px 14px;
+  border: 2px solid rgba(255, 225, 26, 0.4);
+  border-radius: 7px 14px 7px 14px;
+  background: rgba(0, 0, 0, 0.38);
+  cursor: pointer;
+}
+.gloss-row:active { background: rgba(255, 225, 26, 0.18); }
+.gloss-row b {
+  color: var(--yellow);
+  font-size: clamp(15px, 4vw, 19px);
+  font-weight: 900;
+}
+.gloss-row span {
+  color: var(--white);
+  opacity: 0.85;
+  font-size: clamp(12px, 3.2vw, 15px);
+  text-align: right;
+}
+.gloss-hint {
+  font-size: clamp(11px, 2.8vw, 13px);
+  letter-spacing: 1.5px;
+  color: var(--yellow);
+  opacity: 0.85;
+  margin: 2px 0 4px;
+}
+.gloss-reto {
+  font-size: clamp(12px, 3vw, 14px);
+  font-weight: 800;
+  color: var(--magenta);
+  margin: 6px 0 0;
+}
+
+/* TITLE SCREEN DENSITY. The whole first screen must fit a 6.9" phone with no
+   scrolling — a player should never have to discover that START is further
+   down. Language becomes a two-up segmented row, difficulty rows go slim, and
+   the mascot gives up some height. */
+.title-compact #hero { max-height: 11vh; max-width: 26%; }
+.title-compact .logo { font-size: clamp(30px, 9vw, 44px); line-height: 0.92; }
+.title-compact .tagline { font-size: 12px; margin-bottom: 2px; }
+.title-compact #overlay-body > p:first-child { display: none; }
+.title-compact .lvl-select-h { margin: 8px 0 4px; font-size: 10px; }
+.title-compact .diff-select { margin-bottom: 4px; }
+
+/* language: two pills side by side instead of two full-width rows */
+.lang-row { display: flex; gap: 8px; }
+.lang-row .lang-btn {
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  text-align: center;
+  padding: 7px 6px;
+}
+.lang-row .lang-btn .diff-icon { font-size: 20px; }
+.lang-row .lang-btn .diff-name { font-size: 14px; letter-spacing: 0.5px; }
+.lang-row .lang-btn .diff-tag { display: none; }
+.lang-row .lang-btn[disabled] { opacity: 0.45; }
+
+/* difficulty: one slim line each, tag inline instead of stacked */
+.title-compact .diff-btn { padding: 7px 12px; gap: 9px; }
+.title-compact .diff-btn .diff-icon { font-size: 20px; }
+.title-compact .diff-btn .diff-name { font-size: 15px; display: inline; }
+.title-compact .diff-btn .diff-tag { font-size: 10px; display: inline; margin-left: 7px; }
+.title-compact .passport-btn { margin-top: 8px; padding: 6px 18px; font-size: 12px; }
+.title-compact .legal { margin-top: 8px; font-size: 11px; }
+
+/* START must NEVER be below the fold. On a 6.9" phone the title card (two
+   pickers + passport + legal) is taller than the screen, and the button
+   scrolled out of sight — a first-time player, and an App Review tester, would
+   simply not find it. Sticking it to the bottom of the scroll box keeps the
+   one thing you must press permanently on screen. */
+#overlay-btn {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-bottom: 0;
+}
+#overlay-btn::after {
+  content: "";
+  position: absolute;
+  left: -50vw; right: -50vw; bottom: -22px;
+  height: 22px;
+  background: rgba(18, 10, 4, 0.92);
+  z-index: -1;
+}
+.overlay-card > .hint { margin-bottom: 10px; }
+
+/* ------------------------------------------------- Question modes (MEMORIA) --- */
+/* The prompt frame is the telegraph: each retrieval mode owns a colour and an
+   icon, so the KIND of question reads before a single word is parsed. */
+#prompt.mode-audio {
+  border-color: var(--cyan);
+  box-shadow: 0 0 26px rgba(33, 230, 255, 0.55), 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+#prompt.mode-audio .prompt-label { color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
+#prompt.mode-audio .prompt-word {
+  color: var(--cyan);
+  font-size: clamp(30px, 8vw, 46px);
+  animation: hear 1.1s ease-in-out infinite;
+}
+/* The bilingual labels are long; the bar must shrink to fit the phone rather
+   than run off both edges. */
+#prompt { max-width: min(94vw, 620px); flex-wrap: wrap; justify-content: center; }
+.prompt-label { white-space: normal; line-height: 1.15; }
+.lbl-en {
+  display: block;
+  font-size: 0.72em;
+  letter-spacing: 1px;
+  opacity: 0.75;
+  text-transform: none;
+}
+@keyframes hear {
+  0%, 100% { opacity: 0.55; transform: scale(0.97); }
+  50%      { opacity: 1;    transform: scale(1.03); }
+}
+#prompt.mode-rev {
+  border-color: var(--purple);
+  box-shadow: 0 0 26px rgba(161, 43, 255, 0.5), 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+#prompt.mode-rev .prompt-label { color: #d9a6ff; text-shadow: 0 0 10px var(--purple); }
+#prompt.mode-review { border-style: double; border-width: 5px; }
+
+/* A word you've fumbled before, flagged on the study card. */
+.gloss-row.shaky { border-color: rgba(255, 200, 64, 0.75); }
+.gloss-row.shaky b { color: #ffd94d; }
+.redeemed {
+  margin: 6px 0 0;
+  font-size: clamp(12px, 3vw, 15px);
+  font-weight: 900;
+  color: #ffd94d;
+  text-shadow: 0 0 12px rgba(255, 196, 0, 0.6);
+}
+
+.legal { margin: 14px 0 0; font-size: 12px; opacity: .55; }
+.legal a { color: var(--cyan); }
+
+/* ------------------------------------------------------------ Passport --- */
+.passport-btn {
+  display: block;
+  margin: 14px auto 0;
+  padding: 8px 22px;
+  font: 800 clamp(13px, 3.4vw, 16px) inherit;
+  font-family: inherit;
+  letter-spacing: 1px;
+  color: var(--white);
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid var(--cyan);
+  border-radius: 8px 18px 8px 18px;
+  cursor: pointer;
+}
+.passport {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  max-width: 560px;
+  max-height: 52vh;
+  overflow-y: auto;
+  margin: 10px auto 0;
+}
+.stamp {
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 50% 46% 48% 52% / 52% 48% 50% 46%;   /* inky, imperfect ring */
+  padding: 14px 8px;
+  transform: rotate(var(--rot, 0deg));
+  color: rgba(255, 255, 255, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 84px;
+}
+.stamp.got {
+  border: 3px double var(--magenta);
+  color: var(--yellow);
+  box-shadow: 0 0 14px rgba(255, 47, 185, 0.35), inset 0 0 18px rgba(255, 47, 185, 0.15);
+}
+.stamp-city { font-weight: 900; font-size: clamp(10px, 2.6vw, 12px); letter-spacing: 0.5px; text-align: center; }
+.stamp-mark { font-size: clamp(11px, 3vw, 14px); letter-spacing: 3px; }
+.stamp-slam {
+  margin: 6px auto 12px;
+  max-width: 240px;
+  animation: stamp-slam 0.5s cubic-bezier(0.2, 2.4, 0.4, 1) 0.25s backwards;
+}
+@keyframes stamp-slam {
+  from { transform: rotate(var(--rot)) scale(2.8); opacity: 0; }
+  60%  { opacity: 1; }
+  to   { transform: rotate(var(--rot)) scale(1); opacity: 1; }
+}
+
+/* -------------------------------------------------------------- Mobile --- */
+/* Short viewports: the HUD, prompt and subtitle all compete for the same
+   vertical band, so everything tightens up. */
+@media (max-width: 820px) {
+  #hud { padding: max(20px, calc(env(safe-area-inset-top) + 10px)) 9px 0; gap: 5px; }
+  .hud-row { gap: 5px; }
+  .hud-pill { padding: 4px 8px; border-width: 2px; border-radius: 5px 11px 5px 11px; font-size: clamp(11px, 3vw, 18px); }
+  .hud-pill.mute, .hud-pill.narrate { padding: 4px 7px; }
+  #hud-progress { height: 7px; border-width: 1px; }
+  #prompt {
+    /* bottom-anchored like the desktop rule — tighter above the rush bar */
+    top: auto;
+    bottom: calc(max(22px, env(safe-area-inset-bottom)) + 10vh);
+    gap: 10px;
+    padding: 6px 16px;
+  }
+  .prompt-label { font-size: 11px; letter-spacing: 1px; }
+  #sentence-bar { bottom: max(10px, env(safe-area-inset-bottom)); }
+  #sentence-words { font-size: clamp(21px, 6vw, 33px); }
+  #sentence-en { font-size: 14px; letter-spacing: 0.1em; }
+  #now-playing { left: 10px; bottom: max(56px, calc(env(safe-area-inset-bottom) + 56px)); }
+  #frame { border-width: 8px 5px 10px 5px; }
+  .overlay-card { padding: 18px 14px 16px; }
+}
+
+/* ----------------------------------------------------------- Touch hint --- */
+#touch-hint {
+  position: absolute;
+  bottom: 12%;
+  left: 0; right: 0;
+  text-align: center;
+  z-index: 4;
+  pointer-events: none;
+  font-size: clamp(13px, 4vw, 18px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--white);
+  text-shadow: 0 0 12px var(--cyan);
+  animation: pulse 1.1s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 0.35; } 50% { opacity: 1; } }
+
+/* ------------------------------------------------------- Film-frame border --- */
+#frame {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  border-style: solid;
+  border-color: #0a0503;
+  border-width: 18px 10px 24px 10px;
+  box-shadow: inset 0 0 60px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* ------------------------------------------------------------ Pause --- */
+.hud-pill.pause {
+  font-family: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  padding: 6px 12px;
+  line-height: 1;
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+#pause-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 4, 14, 0.82);
+  backdrop-filter: blur(4px);
+}
+#pause-screen.hidden { display: none !important; }
+.pause-card {
+  text-align: center;
+  padding: 26px 34px;
+  border-radius: 22px;
+  background: rgba(18, 10, 4, 0.92);
+  border: 3px solid var(--cyan);
+  box-shadow: 0 0 50px rgba(33, 230, 255, 0.4);
+}
+.pause-title {
+  font-size: clamp(30px, 9vw, 52px);
+  font-weight: 900;
+  color: var(--cyan);
+  letter-spacing: 4px;
+  -webkit-text-stroke: 2px var(--ink);
+  text-shadow: 0 4px 0 var(--magenta);
+}
+
+/* ------------------------------------------- Completed-sentence flash --- */
+/* The whole sentence you just finished, thrown up big for a beat before the
+   next question so the lesson actually lands. */
+#sentence-flash {
+  position: fixed;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  z-index: 18;
+  pointer-events: none;
+  text-align: center;
+  width: min(94%, 900px);
+}
+#sentence-flash.hidden { display: none !important; }
+#sentence-flash-es {
+  font-size: clamp(26px, 7vw, 54px);
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--green);
+  -webkit-text-stroke: 2px var(--ink);
+  text-shadow: 0 4px 0 var(--ink), 0 0 30px var(--green);
+}
+#sentence-flash-en {
+  margin-top: 8px;
+  font-size: clamp(14px, 3.4vw, 24px);
+  font-weight: 800;
+  font-style: italic;
+  color: var(--cyan);
+  text-shadow: 0 2px 0 var(--ink), 0 0 18px rgba(33, 230, 255, 0.8);
+}
+#sentence-flash.pop { animation: sflash 2.1s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
+@keyframes sflash {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6) rotate(-3deg); }
+  12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.12) rotate(2deg); }
+  24%  { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  80%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -62%) scale(1.04); }
+}
+
+/* --------------------------------------------- Unlock celebration --- */
+#celebrate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;               /* behind the card, over the dimmed backdrop */
+}
+.unlock-card { position: relative; z-index: 1; }
+#unlock-es {
+  margin-top: 6px;
+  font-size: clamp(17px, 4.4vw, 26px);
+  font-weight: 900;
+  color: var(--green);
+  -webkit-text-stroke: 1px var(--ink);
+  text-shadow: 0 2px 0 var(--ink), 0 0 18px var(--green);
+}
+#unlock-en {
+  margin-top: 2px;
+  font-size: clamp(12px, 2.8vw, 16px);
+  font-weight: 800;
+  font-style: italic;
+  color: var(--cyan);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+/* ------------------------------------------------------ Exit / difficulty --- */
+.hud-pill.exit {
+  font-family: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  padding: 6px 10px;
+  line-height: 1;
+  font-size: clamp(10px, 2.2vw, 14px);
+  letter-spacing: 1px;
+  color: var(--pink);
+  border-color: var(--pink);
+}
+.btn-secondary {
+  margin-top: 10px;
+  background: linear-gradient(180deg, var(--pink), var(--purple));
+  color: var(--white);
+  font-size: clamp(14px, 3.2vw, 18px);
+  padding: 9px 26px;
+}
+.diff-select { margin-top: 12px; }
+.diff-grid { display: flex; flex-direction: column; gap: 8px; }
+.diff-btn {
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px 18px 8px 18px;
+  background: rgba(12, 7, 3, 0.6);
+  border: 2px solid rgba(255, 180, 90, 0.4);
+  color: var(--white);
+  text-align: left;
+  transition: transform 0.08s ease, border-color 0.08s ease, box-shadow 0.08s ease;
+}
+.diff-btn:hover { transform: translateX(3px); }
+.diff-btn .diff-icon { font-size: 26px; flex: 0 0 auto; }
+.diff-btn .diff-name {
+  display: block;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: var(--yellow);
+}
+.diff-btn .diff-tag {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+}
+.diff-btn.sel {
+  border-color: var(--green);
+  box-shadow: 0 0 22px rgba(182, 255, 43, 0.4);
+}
+.diff-btn.sel .diff-name { color: var(--green); }
+.dev-levels { margin-top: 12px; text-align: left; }
+.dev-levels summary {
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.4);
+}
